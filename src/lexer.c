@@ -3,29 +3,32 @@
 #include "lexer.h"
 
 void lexer_init(Lexer* lx, const char* src){
-    lx->start = src;
     lx->curr = src;
+    lx->next = src;
     lx->line = 1;
 }
 
 static bool lexer_is_end(Lexer* lx);
-static char lexer_curr_char(Lexer* lx);
+static char lexer_next_char(Lexer* lx);
 static char lexer_advance(Lexer* lx);
 static void lexer_nl(Lexer* lx);
 static void lexer_skip_whitespace(Lexer* lx);
+static Token lexer_number(Lexer* lx);
 static Token token_cc(Lexer* lx, TokenType t);
 static Token token_err(Lexer* lx, const char* msg);
 static bool is_digit(char c);
 
 Token lexer_next(Lexer* lx){
     lexer_skip_whitespace(lx);
-    lx->start = lx->curr;
+    lx->curr = lx->next;
 
     if (lexer_is_end(lx)){
 	return token_cc(lx, TOKEN_EOF); 
     }
 
     char c = lexer_advance(lx);
+
+    if (is_digit(c)) return lexer_number(lx);
     
     switch(c){
 	case '(': return token_cc(lx, TOKEN_LEFT_PAREN);
@@ -39,16 +42,16 @@ Token lexer_next(Lexer* lx){
 }
 
 static bool lexer_is_end(Lexer* lx){
-    return lexer_curr_char(lx) == '\0';
+    return lexer_next_char(lx) == '\0';
 }
 
-static char lexer_curr_char(Lexer* lx){
-    return *lx->curr;
+static char lexer_next_char(Lexer* lx){
+    return *lx->next;
 }
 
 static char lexer_advance(Lexer* lx){
-    char c = lexer_curr_char(lx);
-    lx->curr++;
+    char c = lexer_next_char(lx);
+    lx->next++;
     return c;
 }
 
@@ -58,7 +61,7 @@ static void lexer_nl(Lexer* lx){
 
 static void lexer_skip_whitespace(Lexer* lx){
     for (;;) {
-	char c = lexer_curr_char(lx);
+	char c = lexer_next_char(lx);
 	
 	switch(c){
 	    case '\n':
@@ -75,11 +78,18 @@ static void lexer_skip_whitespace(Lexer* lx){
     }
 }
 
+static Token lexer_number(Lexer* lx){
+    for (;;) {
+	if (!is_digit(lexer_next_char(lx))) return token_cc(lx, TOKEN_NUMBER);
+	lexer_advance(lx);
+    }
+}
+
 static Token token_cc(Lexer* lx, TokenType t){
     return (Token){
 	.type = t,
-	.start = lx->start,
-	.length = (int)(lx->curr - lx->start),
+	.start = lx->curr,
+	.length = (int)(lx->next - lx->curr),
 	.line = lx->line,
     };
 }
