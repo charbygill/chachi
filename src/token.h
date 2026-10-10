@@ -2,7 +2,7 @@
 #define CHACHI_TOKEN_H
 
 typedef enum {
-    //Single char
+    //Operators
     TOKEN_LEFT_PAREN,
     TOKEN_RIGHT_PAREN,
     TOKEN_PLUS,
