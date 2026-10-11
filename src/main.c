@@ -3,8 +3,7 @@
 #include <string.h>
 #include <errno.h>   
 
-#include "lexer.h"
-#include "ast.h"
+#include "parser.h"
 #include "error.h"
 
 static char* read_file(const char* path){
@@ -51,19 +50,9 @@ int main(int argc, char* argv[]){
 
     char *buf = read_file(argv[1]); 
 
-    Lexer lx;
-    lexer_init(&lx, buf);
-
-    Ast a;
-    Ast* a_root;
-
-    for (;;){
-	Token t = lexer_next(&lx);
-	
-	printf("line %d: type %d '%.*s'\n", t.line, t.type, t.length, t.start); 
-
-	if (t.type == TOKEN_EOF) break;
-    }
+    Ast* a = parse(buf);
+    printf("%lld\n", (long long)a->value.integer);
+    ast_free(a);
 
     free(buf);
     return 0;
