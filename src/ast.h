@@ -22,16 +22,23 @@ typedef struct {
     TokenType operator;
     Ast* left;
     Ast* right;
-} Binary;
+} Operator;
+
+typedef union {
+   int64_t integer;
+   Unary unary;
+   Operator operator;
+} AstValue;
 
 struct Ast {
     AstType type;
     int line;
-    union {
-	int64_t integer;
-	Unary unary;
-	Binary binary;
-    } as;
+    AstValue value;
 };
+
+void ast_free(Ast* a);
+Ast* ast_number(int64_t value, int line);
+Ast* ast_unary(TokenType u, Ast* child, int line);
+Ast* ast_operator(TokenType u, Ast* left, Ast* right, int line);
 
 #endif

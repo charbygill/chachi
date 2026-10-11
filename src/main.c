@@ -1,21 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <string.h>
 #include <errno.h>   
 
 #include "lexer.h"
-
-static void erxit(int err, const char* fmt, ...){
-    va_list args;
-    va_start(args, fmt);
-
-    vfprintf(stderr, fmt, args);
-    fputc('\n', stderr);
-    va_end(args);
-
-    exit(err);
-}
+#include "ast.h"
+#include "error.h"
 
 static char* read_file(const char* path){
     FILE *f = fopen(path, "rb");
@@ -56,13 +46,16 @@ static char* read_file(const char* path){
 
 int main(int argc, char* argv[]){
     if (argc != 2) {
-	erxit(1, "Usage: chachi <file>");
+	erxit(1, "Usage: chachi <file_path>");
     }
 
     char *buf = read_file(argv[1]); 
 
     Lexer lx;
     lexer_init(&lx, buf);
+
+    Ast a;
+    Ast* a_root;
 
     for (;;){
 	Token t = lexer_next(&lx);
