@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "intern.h"
 #include "parser.h"
 #include "lexer.h"
 #include "token.h"
@@ -14,9 +15,12 @@ typedef struct {
     Token curr;
     Token prev;
     int depth;
+
+    //Reference to Interner
+    Interner* i;
 } Parser;
 
-static void parser_init(Parser *p, const char* src);
+static void parser_init(Parser *p, Interner* i, const char* src);
 static void parser_advance(Parser* p);
 static bool parser_check(Parser* p, TokenType type);
 static bool parser_match(Parser* p, TokenType type);
@@ -31,15 +35,16 @@ static Ast* parse_primary(Parser* p);
 static int64_t parse_int(Token t);
 
 
-Ast* parse(const char* src){
+Ast* parse(const char* src, Interner* i){
     Parser p;
-    parser_init(&p, src);
+    parser_init(&p, i, src);
     Ast* a = parse_expression(&p);
     parser_expect(&p, TOKEN_EOF, "Expected end of input");
     return a;
 }
 
-static void parser_init(Parser *p, const char* src){
+static void parser_init(Parser *p, Interner* i, const char* src){
+    p->i = i;
     lexer_init(&p->lx, src);
     p->depth = 0;
     parser_advance(p); 
@@ -81,7 +86,7 @@ static Ast* parse_term(Parser* p){
     while (parser_match(p, TOKEN_PLUS) || parser_match(p, TOKEN_MINUS)) {
         Token op = p->prev;
         Ast* right = parse_factor(p);
-        left = ast_operator(op, left, right, op.line);
+        left = ast_operator(op.type, intern(p->i, op.start, op.length), left, right, op.line);
     }
 
     return left;
@@ -93,7 +98,7 @@ static Ast* parse_factor(Parser* p){
     while (parser_match(p, TOKEN_ASTERISK) || parser_match(p, TOKEN_SLASH)) {
         Token op = p->prev;
         Ast* right = parse_unary(p);
-        left = ast_operator(op, left, right, op.line);
+        left = ast_operator(op.type, intern(p->i, op.start, op.length), left, right, op.line);
     }
 
     return left;
@@ -108,7 +113,7 @@ static Ast* parse_unary(Parser* p){
     if (parser_match(p, TOKEN_MINUS)){
         Token u = p->prev;
         Ast* inner = parse_unary(p);
-        result = ast_unary(u, inner, u.line);
+        result = ast_unary(u.type, intern(p->i, u.start, u.length), inner, u.line);
     } else {
         result = parse_primary(p);
     }

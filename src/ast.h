@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+#include "intern.h"
 #include "token.h"
 
 typedef enum {
@@ -14,12 +15,14 @@ typedef enum {
 typedef struct Ast Ast;
 
 typedef struct {
-    Token operator;
+    TokenType operator;
+    const InternEntry* text;
     Ast* child;
 } Unary;
 
 typedef struct {
-    Token operator;
+    TokenType operator;
+    const InternEntry* text;
     Ast* left;
     Ast* right;
 } Operator;
@@ -38,8 +41,8 @@ struct Ast {
 
 void ast_free(Ast* a);
 Ast* ast_number(int64_t value, int line);
-Ast* ast_unary(Token u, Ast* child, int line);
-Ast* ast_operator(Token u, Ast* left, Ast* right, int line);
+Ast* ast_unary(TokenType t, const InternEntry* text, Ast* child, int line);
+Ast* ast_operator(TokenType t, const InternEntry* text, Ast* left, Ast* right, int line);
 
 void ast_print(Ast* a);
 

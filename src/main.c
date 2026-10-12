@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <errno.h>   
 
+#include "intern.h"
 #include "parser.h"
 #include "error.h"
 
@@ -11,7 +12,7 @@ static bool has_extension(const char* path, const char* ext){
     size_t p_len = strlen(path); 
     size_t e_len = strlen(ext);
 
-    if (p_len < e_len) return false;
+    if (p_len <= e_len) return false;
 
     return strcmp(path + (p_len - e_len), ext) == 0;
 }
@@ -57,12 +58,18 @@ int main(int argc, char* argv[]){
     if (argc != 2) erxit(1, "Usage: chachi <file_path>");
     if (!has_extension(argv[1], ".chi")) erxit(1, "\'%s\' has the wrong file extension", argv[1]);
 
-    char *buf = read_file(argv[1]); 
+    char *buf = read_file(argv[1]);
 
-    Ast* a = parse(buf);
+    Interner i;
+    interner_init(&i);
+
+    Ast* a = parse(buf, &i);
+    free(buf);
+
     ast_print(a); printf("\n");
     ast_free(a);
 
-    free(buf);
+    interner_free(&i);
+
     return 0;
 }
