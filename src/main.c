@@ -13,7 +13,7 @@ static bool has_extension(const char* path, const char* ext){
 
     if (p_len < e_len) return false;
 
-    return strcmp(path + (p_len - e_len), ext);
+    return strcmp(path + (p_len - e_len), ext) == 0;
 }
 
 static char* read_file(const char* path){
