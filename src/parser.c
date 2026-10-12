@@ -16,11 +16,16 @@ typedef struct {
 static void parser_init(Parser *p, const char* src);
 static void parser_advance(Parser* p);
 static bool parser_check(Parser* p, TokenType type);
+static bool parser_match(Parser* p, TokenType type);
 static void parser_expect(Parser* p, TokenType type, const char* msg);
 
+// Defining precedence levels as different functions
 static Ast* parse_expression(Parser* p);
+static Ast* parse_term(Parser* p);
+static Ast* parse_factor(Parser* p);
 static Ast* parse_primary(Parser* p);
 static int64_t parse_int(Token t);
+
 
 Ast* parse(const char* src){
     Parser p;
@@ -45,6 +50,14 @@ static bool parser_check(Parser* p, TokenType type){
     return (p->curr.type == type);
 }
 
+static bool parser_match(Parser* p, TokenType type){
+    if (parser_check(p, type)) {
+        parser_advance(p);
+        return true;
+    }
+    return false;
+}
+
 static void parser_expect(Parser* p, TokenType type, const char* msg){
     if (parser_check(p, type)){
         parser_advance(p);
@@ -54,7 +67,31 @@ static void parser_expect(Parser* p, TokenType type, const char* msg){
 }
 
 static Ast* parse_expression(Parser* p){ //This is the ast build loop
-    return parse_primary(p);
+    return parse_term(p);
+}
+
+static Ast* parse_term(Parser* p){
+    Ast* left = parse_factor(p);
+
+    while (parser_match(p, TOKEN_PLUS) || parser_match(p, TOKEN_MINUS)) {
+        Token op = p->prev;
+        Ast* right = parse_factor(p);
+        left = ast_operator(op, left, right, op.line);
+    }
+
+    return left;
+}
+
+static Ast* parse_factor(Parser* p){
+    Ast* left = parse_primary(p);
+
+    while (parser_match(p, TOKEN_ASTERISK) || parser_match(p, TOKEN_SLASH)) {
+        Token op = p->prev;
+        Ast* right = parse_primary(p);
+        left = ast_operator(op, left, right, op.line);
+    }
+
+    return left;
 }
 
 static Ast* parse_primary(Parser* p){ //Token 

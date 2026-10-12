@@ -14,12 +14,12 @@ typedef enum {
 typedef struct Ast Ast;
 
 typedef struct {
-    TokenType operator;
+    Token operator;
     Ast* child;
 } Unary;
 
 typedef struct {
-    TokenType operator;
+    Token operator;
     Ast* left;
     Ast* right;
 } Operator;
@@ -38,7 +38,9 @@ struct Ast {
 
 void ast_free(Ast* a);
 Ast* ast_number(int64_t value, int line);
-Ast* ast_unary(TokenType u, Ast* child, int line);
-Ast* ast_operator(TokenType u, Ast* left, Ast* right, int line);
+Ast* ast_unary(Token u, Ast* child, int line);
+Ast* ast_operator(Token u, Ast* left, Ast* right, int line);
+
+void ast_print(Ast* a);
 
 #endif

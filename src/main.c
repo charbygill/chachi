@@ -51,7 +51,7 @@ int main(int argc, char* argv[]){
     char *buf = read_file(argv[1]); 
 
     Ast* a = parse(buf);
-    printf("%lld\n", (long long)a->value.integer);
+    ast_print(a); printf("\n");
     ast_free(a);
 
     free(buf);

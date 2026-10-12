@@ -1,4 +1,6 @@
 #include <stdlib.h>
+#include <stdio.h>
+#include <assert.h>
 
 #include "ast.h"
 #include "error.h"
@@ -38,7 +40,8 @@ Ast* ast_number(int64_t value, int line){
     return ast_new(AST_NUMBER, (AstValue){.integer = value}, line);
 }
 
-Ast* ast_unary(TokenType u, Ast* child, int line){
+Ast* ast_unary(Token u, Ast* child, int line){
+    //assert(u.type == ...);
     return ast_new(AST_UNARY, (AstValue){
         .unary={ 
 	    .operator = u,
@@ -47,7 +50,13 @@ Ast* ast_unary(TokenType u, Ast* child, int line){
     }, line);
 }
 
-Ast* ast_operator(TokenType u, Ast* left, Ast* right, int line){
+Ast* ast_operator(Token u, Ast* left, Ast* right, int line){
+    assert(
+        u.type == TOKEN_PLUS        ||
+        u.type == TOKEN_MINUS       ||
+        u.type == TOKEN_ASTERISK    ||
+        u.type == TOKEN_SLASH
+    );
     return ast_new(AST_OPERATOR, (AstValue){
         .operator={ 
 	    .operator = u,
@@ -55,4 +64,26 @@ Ast* ast_operator(TokenType u, Ast* left, Ast* right, int line){
 	    .right = right,
 	},
     }, line);
+}
+
+void ast_print(Ast* a){
+    if (a == NULL) return;
+    
+    switch (a->type){
+	case AST_NUMBER:
+            printf("%lld", (long long)a->value.integer);
+	    break;
+	case AST_UNARY:
+	    break;
+	case AST_OPERATOR: {
+            printf("(");
+            Token op = a->value.operator.operator;
+            printf("'%.*s' ", op.length, op.start);
+            ast_print(a->value.operator.left);
+            printf(" ");
+            ast_print(a->value.operator.right);
+            printf(")");
+	    break;
+        }
+    }
 }
