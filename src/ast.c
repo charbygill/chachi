@@ -4,6 +4,7 @@
 
 #include "ast.h"
 #include "error.h"
+#include "token.h"
 
 void ast_free(Ast* a){
     if (a == NULL) return;
@@ -41,7 +42,7 @@ Ast* ast_number(int64_t value, int line){
 }
 
 Ast* ast_unary(Token u, Ast* child, int line){
-    //assert(u.type == ...);
+    assert(u.type == TOKEN_MINUS);
     return ast_new(AST_UNARY, (AstValue){
         .unary={ 
 	    .operator = u,
@@ -74,6 +75,10 @@ void ast_print(Ast* a){
             printf("%lld", (long long)a->value.integer);
 	    break;
 	case AST_UNARY:
+            Token op = a->value.unary.operator;
+            printf("('%.*s' ", op.length, op.start);
+            ast_print(a->value.unary.child);
+            printf(")");
 	    break;
 	case AST_OPERATOR: {
             printf("(");

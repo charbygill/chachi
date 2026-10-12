@@ -7,10 +7,13 @@
 #include "token.h"
 #include "error.h"
 
+#define MAX_DEPTH 256
+
 typedef struct {
     Lexer lx;
     Token curr;
     Token prev;
+    int depth;
 } Parser;
 
 static void parser_init(Parser *p, const char* src);
@@ -23,6 +26,7 @@ static void parser_expect(Parser* p, TokenType type, const char* msg);
 static Ast* parse_expression(Parser* p);
 static Ast* parse_term(Parser* p);
 static Ast* parse_factor(Parser* p);
+static Ast* parse_unary(Parser* p);
 static Ast* parse_primary(Parser* p);
 static int64_t parse_int(Token t);
 
@@ -37,6 +41,7 @@ Ast* parse(const char* src){
 
 static void parser_init(Parser *p, const char* src){
     lexer_init(&p->lx, src);
+    p->depth = 0;
     parser_advance(p); 
 }
 
@@ -83,24 +88,49 @@ static Ast* parse_term(Parser* p){
 }
 
 static Ast* parse_factor(Parser* p){
-    Ast* left = parse_primary(p);
+    Ast* left = parse_unary(p);
 
     while (parser_match(p, TOKEN_ASTERISK) || parser_match(p, TOKEN_SLASH)) {
         Token op = p->prev;
-        Ast* right = parse_primary(p);
+        Ast* right = parse_unary(p);
         left = ast_operator(op, left, right, op.line);
     }
 
     return left;
 }
 
+static Ast* parse_unary(Parser* p){
+    if (++p->depth > MAX_DEPTH){
+        erxit(1, "line %d: Expression nested too deeply", p->curr.line);
+    }
+
+    Ast* result;
+    if (parser_match(p, TOKEN_MINUS)){
+        Token u = p->prev;
+        Ast* inner = parse_unary(p);
+        result = ast_unary(u, inner, u.line);
+    } else {
+        result = parse_primary(p);
+    }
+
+    p->depth--;
+    return result;
+}
+
 static Ast* parse_primary(Parser* p){ //Token 
-    switch (p->curr.type) {
+    parser_advance(p);
+    Token t = p->prev;
+
+    switch (t.type) {
+        case TOKEN_LEFT_PAREN:{
+            Ast* inner = parse_expression(p);
+            parser_expect(p, TOKEN_RIGHT_PAREN, "Expected ')'");
+            return inner;
+        }
         case TOKEN_NUMBER:
-            parser_advance(p);
-            return ast_number(parse_int(p->prev), p->prev.line);
+            return ast_number(parse_int(t), t.line);
         default:
-            erxit(1, "line %d: Unexpected token '%.*s'", p->curr.line, p->curr.length, p->curr.start);
+            erxit(1, "line %d: Unexpected token '%.*s'", t.line, t.length, t.start);
     }
 }
 
