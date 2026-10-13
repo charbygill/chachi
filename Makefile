@@ -1,10 +1,23 @@
-CC	= gcc
-CFLAGS	= -std=c11 -Wall -Wextra -g -fsanitize=address,undefined
+CC      = gcc
+CFLAGS  = -std=c11 -Wall -Wextra -g -fsanitize=address,undefined
+LDFLAGS = -fsanitize=address,undefined
 
-chachi: src/main.c src/lexer.c src/lexer.h src/token.h src/ast.c src/ast.h src/error.c src/error.h src/parser.c src/parser.h src/intern.c src/intern.h
-	$(CC) $(CFLAGS) -o chachi src/main.c src/lexer.c src/ast.c src/error.c src/parser.c src/intern.c
+SRC = $(wildcard src/*.c)
+OBJ = $(SRC:src/%.c=build/%.o)
+DEP = $(OBJ:.o=.d)
+
+chachi: $(OBJ)
+	$(CC) $(LDFLAGS) -o $@ $^
+
+build/%.o: src/%.c | build
+	$(CC) $(CFLAGS) -MMD -MP -c $< -o $@
+
+build:
+	mkdir -p build
 
 clean:
-	rm -f chachi
+	rm -rf build chachi
+
+-include $(DEP)
 
 .PHONY: clean
